@@ -186,6 +186,26 @@ class Plotter:
         plt.legend()
         plt.show()
 
+def menu(dictionary):
+    """
+    Displays a formatted menu based on the keys of a given dictionary.
+
+    The function calculates the required width for the menu based on the longest key
+    in the dictionary, then prints a header and footer line, followed by each key in the
+    dictionary as a menu item.
+
+    Args:
+        dictionary (dict): A dictionary whose keys will be displayed as menu items.
+
+    Example:
+        menu({'Option 1': 1, 'Option 2': 2, 'Longer Option': 3})
+    """
+    menu_size = len(max(dictionary, key=len)) + 4
+    print('_' * menu_size)
+    for i in dictionary:
+        print(i)
+    print('-' * menu_size)
+
 # Main execution
 if __name__ == "__main__":
     materials = {
@@ -203,8 +223,7 @@ if __name__ == "__main__":
         'copper': 8960,
     }
 
-    for i, j in enumerate(materials):
-        print(f'{i}) {j}')
+    menu(materials)
 
     while True:
         try:
@@ -212,14 +231,14 @@ if __name__ == "__main__":
             density = materials.get(density_input)  # Get density from material dictionary
 
             if density is None:
-                density = int(input('Density of material (kg/m³): '))  # Input custom density
+                int(input('Density not in dictionary! \nInput Density of material (kg/m³): ')) # Input custom density
 
             MASS = int(input("Mass of the ball (kg): "))  # Input mass
             if MASS <= 0:
                 raise ValueError("Mass must be a positive value.")
 
             SPEED_PLANE = int(input("Plane's speed (m/s): "))  # Input plane speed
-            SPEED_WIND = int(input("Wind's speed (neg or pos): "))  # Input wind speed
+            SPEED_WIND = int(input("Wind's speed m/s (neg or pos): "))  # Input wind speed
             INITIAL_HEIGHT = int(input("How far is the plane above the ground (m): "))  # Input height
             if INITIAL_HEIGHT < 0:
                 raise ValueError("Height must be a non-negative value.")
