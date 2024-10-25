@@ -1,48 +1,99 @@
 import math
+import numpy as np
 import matplotlib.pyplot as plt
 
-# Input parameters for plane and environmental conditions
-speed_plane = int(input("Plane's Speed in meters: "))  # Speed of the plane
-direction_plane = int(input("Plane's Direction (0/1): "))  # Direction of the plane (0 or 1)
-speed_wind = int(input("Wind's Speed in meters: "))  # Speed of the wind
-direction_wind = int(input("Wind's Direction (0/1): "))  # Direction of the wind (0 or 1)
-height = int(input("How far is the plane above the ground: "))  # Height from which the plane drops
-sphere_radius = int(input('Sphere radius: '))  # Not used in calculations but can be for other purposes
+material = {
+    'else': None,
+    'rubber': 1100,
+    'polyethylene': 900,
+    'leather': 900,
+    'foam': 60,
+    'steel': 7850,
+    'composite materials': 1700,
+    'ceramic': 2600,
+    'glass': 2500,
+    'silicone': 1100,
+    'bamboo': 700,
+    'copper': 8960,
+}
 
-# Calculate the time it takes for the plane to fall to the ground
-time_fall = math.sqrt(2 * height / 9.8)  # Derived from the free fall formula: t = sqrt(2h/g)
+for i,j in enumerate(material):
+    print(f'{i}) {j}')
 
-# Determine the horizontal speed of the plane considering wind effect
-# If the wind and plane direction are the same, speeds add; otherwise, they subtract
-horizontal_speed = speed_plane + speed_wind if direction_wind == direction_plane else speed_plane - speed_wind
+# Constants
+density = input('Material of the ball: ')
+if density == 'else':
+    density = int(input('Density of material: '))
+MASS = int(input("Mass of the ball (kg): "))  # kg
+DENSITY_AIR = 1.225  # kg/m^3, air density at sea level
+DRAG_COEFFICIENT = 0.47  # drag coefficient for a sphere
+volume = MASS / density
+radius = ((3 * volume) / (4 * math.pi) ** (1/3))  # m, sphere radius
+AREA = math.pi * radius**2  # m^2, cross-sectional area of the sphere
+G = 9.81  # m/s^2, gravitational acceleration
 
-# Calculate the range (horizontal distance traveled) during the fall
-r = horizontal_speed * time_fall
+# Initial conditions
+SPEED_PLANE = int(input("Plane's speed (m/s): "))
+SPEED_WIND = int(input("Wind's speed (neg or pos): "))
+INITIAL_HEIGHT = int(input("How far is the plane above the ground (m): ")) 
+INITIAL_VELOCITY_X = SPEED_PLANE + SPEED_WIND
+INITIAL_VELOCITY_Y = 0.0  # m/s, initial vertical velocity
 
-# Prepare data for plotting: create time intervals from 0 to the time of fall
-time_intervals = [i * 0.01 for i in range(int(time_fall * 100))]  # Time steps at 0.01 seconds
-# Calculate vertical positions over time using the free fall equation
-y_positions = [height - 0.5 * 9.8 * t**2 for t in time_intervals]  # Height at each time step
-# Calculate horizontal positions over the same time intervals
-x_positions = [horizontal_speed * t for t in time_intervals]  # Horizontal distance at each time step
+# Time step and total simulation time
+DT = 0.1  # time step in seconds
+TOTAL_TIME = 500  # total simulation time in seconds
 
-# Create a single figure for plotting the trajectory
-plt.figure(figsize=(8, 4))
+# Lists to hold positions and velocities
+x_positions = [0.0]  # starting x position
+y_positions = [INITIAL_HEIGHT]  # starting y position (height)
+time_stamps = []  # time stamps
+vx = INITIAL_VELOCITY_X  # initial horizontal velocity
+vy = INITIAL_VELOCITY_Y  # initial vertical velocity
 
-# Plot the trajectory of the plane
-plt.plot(x_positions, y_positions, color='blue', label='Trajectory')  # Line representing the motion
+# Simulation loop
+for t in np.arange(0, TOTAL_TIME, DT):
+    # Calculate the speed
+    speed = math.sqrt(vx**2 + vy**2)
 
-# Add time markers for every second of the fall
-for t in range(int(time_fall) + 1):  # Loop through each whole second until time of fall
-    x = horizontal_speed * t  # Calculate horizontal position at time t
-    y = height - 0.5 * 9.8 * t**2  # Calculate vertical position at time t
-    plt.scatter(x, y, color='red', zorder=3)  # Add a red marker for the time point
-    plt.text(x, y, str(t), fontsize=8, verticalalignment='bottom', horizontalalignment='right')  # Label the marker with time
+    # Calculate drag force components
+    drag_force = 0.5 * DENSITY_AIR * DRAG_COEFFICIENT * AREA * speed**2
+    drag_force_x = -drag_force * (vx / speed)  # horizontal component
+    drag_force_y = -drag_force * (vy / speed)  # vertical component
 
-# Finalize the plot with title and labels
-plt.title("Projectile Motion from Plane (Considering Wind)")  # Title of the plot
-plt.xlabel("Horizontal Distance (m)")  # Label for the x-axis
-plt.ylabel("Height (m)")  # Label for the y-axis
-plt.grid(True)  # Enable the grid for better visualization
-plt.legend()  # Show the legend indicating the trajectory
-plt.show()  # Display the plot in a single window
+    # Update accelerations considering gravity and drag
+    ax = drag_force_x / MASS
+    ay = -G + (drag_force_y / MASS)
+
+    # Update velocities
+    vx += ax * DT
+    vy += ay * DT
+
+    # Update positions
+    new_x = x_positions[-1] + vx * DT
+    new_y = y_positions[-1] + vy * DT
+
+    # Check if the new height is below ground level
+    if new_y <= 0:
+        break
+
+    x_positions.append(new_x)
+    y_positions.append(new_y)
+
+    # Record time stamps for every second
+    if int(t) % 1 == 0:
+        time_stamps.append(len(x_positions) - 1)
+
+# Plot the trajectory
+plt.figure(figsize=(10, 6))
+plt.plot(x_positions, y_positions, label="Trajectory")
+plt.xlabel("Horizontal Distance (m)")
+plt.ylabel("Vertical Distance (m)")
+plt.title("Trajectory of a 1 kg Copper Sphere with Air Drag")
+
+# Add dots for each second
+for i in time_stamps:
+    plt.scatter(x_positions[i], y_positions[i], color='red', zorder=1)
+
+plt.grid()
+plt.legend()
+plt.show()
